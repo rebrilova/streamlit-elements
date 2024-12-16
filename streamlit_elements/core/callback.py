@@ -3,7 +3,7 @@ import json
 import re
 
 from streamlit import session_state
-from streamlit.components.v1 import components
+from streamlit.components.v1 import custom_component as components
 from typing import Callable
 
 from streamlit_elements.core.exceptions import ElementsFrontendError
@@ -29,6 +29,7 @@ def _patch_register_widget(register_widget):
 
     return wrapper_register_widget
 
+
 # Patch function once.
 if not hasattr(components.register_widget, CALLBACK_KEY):
     components.register_widget = _patch_register_widget(components.register_widget)
@@ -43,6 +44,7 @@ class ElementsCallbackManager:
         self._key = key
 
         # Initialize callbacks store.
+
         if CALLBACK_KEY not in session_state:
             session_state[CALLBACK_KEY] = {}
 
@@ -57,10 +59,9 @@ class ElementsCallbackManager:
         # in the callbacks dictionary. The index is padded make sure
         # every callback ID has the same length. This is used to order
         # for call ordering.
-        callback_id = f"{self._key}{len(self._callbacks):08}"
-        self._callbacks[callback_id] = callback.callback
-        callback.serialize(callback_id)
 
+        callback_id = f"{self._key}.{'0'}"
+        callback.serialize(callback_id)
         return callback
 
     def dispatch(self):
@@ -101,6 +102,7 @@ class ElementsCallback:
 
         if params is not None:
             self._params = params
+
         else:
             # If no params specified, get them from callback's signature
             self._params = _get_parameters(callback)
@@ -121,11 +123,12 @@ class ElementsCallback:
 
         if self._lazy:
             # When widget changes, store data in state.
-            self._serialized = f"({params})=>{{window.lazyData={{...window.lazyData,{data}}};}}"
+            self._serialized = f"({params})=>{{window.lazyData={{{data}}};}}"
         else:
+            # print(1, params, data, f"({params})=>{{send({{...window.lazyData,{data}}});window.lazyData={{}};}}")
             # When widget changes, send data and lazy data to Streamlit.
             # Lazy data is cleared once sent.
-            self._serialized = f"({params})=>{{send({{...window.lazyData,{data}}});window.lazyData={{}};}}"
+            self._serialized = f"({params})=>{{send({{{data}}});}}"
 
     def __repr__(self):
         return self._serialized
