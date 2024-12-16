@@ -44,12 +44,11 @@ def new_frame(key):
 def new_element(module, element):
     if ELEMENTS_FRAME_KEY not in session_state:
         raise ElementsFrameError("Cannot create element outside a frame.")
-
     return Element(session_state[ELEMENTS_FRAME_KEY], module, element)
 
 
 class ElementsFrame:
-    __slots__ = ("_callback_manager", "_serialized", "_children", "_parents", "_key")
+    __slots__ = ("_callback_manager", "_serialized", "_children", "_parents", "_key", '_items')
 
     def __init__(self, key):
         self._callback_manager = ElementsCallbackManager(key)
@@ -57,6 +56,7 @@ class ElementsFrame:
         self._children = []
         self._parents = []
         self._key = key
+        self._items = set()
 
     def register_element(self, element):
         if element not in self._children:
@@ -91,6 +91,8 @@ class ElementsFrame:
             items = ",".join(items)
             return f"[{items}]"
 
+        elif isinstance(obj, str) and '=>' in obj:
+            return obj
         else:
             return json.dumps(obj)
 
